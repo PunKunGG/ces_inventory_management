@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% from '_tables.html' import empty_state %}
+{% block title %}ทำรายการคลัง{% endblock %}
+{% block content %}
+  {% set actions = ['stock_in', 'stock_out', 'loan', 'return'] if g.user.role == 'technician' else ['adjust', 'status'] %}
+  {% set item_actions = ['stock_in', 'stock_out', 'adjust'] %}
+  {% set descriptions = {
+    'stock_in': 'เพิ่มจำนวนอะไหล่ หรือลงทะเบียนรับเครื่องมือทีละชิ้น',
+    'stock_out': 'เลือกอะไหล่และผู้เบิก ตรวจยอดก่อนยืนยัน',
+    'loan': 'เลือกเครื่องมือพร้อมใช้ ผู้ยืม ผู้รับผิดชอบ และกำหนดคืน',
+    'return': 'เลือกเครื่องมือจากรายการยืมค้างและระบุสภาพเมื่อคืน',
+    'adjust': 'ปรับยอดอะไหล่พร้อมเหตุผลและเลขอ้างอิงถ้ามี',
+    'status': 'บันทึกการเปลี่ยนสถานะเครื่องมือพร้อมเหตุผล'
+  } %}
+  {% set images = {'stock_in': 'in', 'stock_out': 'out', 'loan': 'tool', 'return': 'return', 'adjust': 'edit', 'status': 'movement'} %}
+  {% set selected_item = (items|selectattr('id', 'equalto', values.get('item_id', '')|int)|first)|default(none) %}
+  {% set selected_unit = (units|selectattr('id', 'equalto', values.get('tool_unit_id', '')|int)|first)|default(none) %}
+  {% set is_tool = selected_item and selected_item.kind == 'tool' %}
+  {% macro user_field(name, caption) %}
+    <div class="field">
+      <label for="{{ name }}">{{ caption }}</label>
+      <select class="form-select" id="{{ name }}" name="{{ name }}" required><option value="">เลือกบัญชี CES</option>
+        {% for user in users %}
+          <option value="{{ user.id }}"{% if values.get(name) == user.id|string %} selected{% endif %}>{{ user.name }} ({{ user.username }})</option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endmacro %}
+  <div class="page-heading"><div><span class="eyebrow">การเคลื่อนไหวคลัง</span><h1>ทำรายการคลัง</h1><p>เลือกประเภทตามงานที่ต้องการบันทึก</p></div></div>
+  <div class="stack">
+    <nav class="pill-tabs" aria-label="ประเภทธุรกรรม">
+      {% for value in actions %}
+        <a href="{{ url_for('operations', action=value) }}"{% if value == action %} aria-current="page"{% endif %}>{{ icon(images[value], 16) }} {{ labels[value] }}</a>
+      {% endfor %}
+    </nav>
+    <section class="panel form-width" aria-labelledby="operation-heading">
+      <div class="panel-heading"><div><h2 id="operation-heading">{{ labels[action] }}</h2><p>{{ descriptions[action] }}</p></div><span class="section-icon">{{ icon(images[action], 19) }}</span></div>
+      {% if (action in item_actions and not items) or (action not in item_actions and not units) %}
+        {{ empty_state('ยังไม่มีรายการที่พร้อมสำหรับธุรกรรมนี้', images[action]) }}
+      {% else %}
+        <form method="post" class="panel-body form-grid" data-stock-form="{{ action }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="request_key" value="{{ request_key }}">
+          {% if action in item_actions %}
+            <div class="field span-full">
+              <label for="item_id">รายการคลัง</label>
+              <select class="form-select" id="item_id" name="item_id" data-item-select required><option value="">เลือกรายการ</option>
+                {% for row in items %}
+                  <option value="{{ row.id }}" data-kind="{{ row.kind }}" data-available="{{ row.available_quantity }}"{% if selected_item and selected_item.id == row.id %} selected{% endif %}>{{ row.code }} · {{ row.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% if action == 'stock_in' %}
+              <fieldset class="span-full form-grid" data-tool-fields{% if not is_tool %} hidden{% endif %}>
+                <div class="field"><label for="tool_code">รหัสเครื่องมือรายชิ้น</label><input class="form-control mono" id="tool_code" name="tool_code" maxlength="80" value="{{ values.get('tool_code', '') }}" required{% if not is_tool %} disabled{% endif %}></div>
+                <div class="field"><label for="serial">Serial Number</label><input class="form-control mono" id="serial" name="serial" maxlength="120" value="{{ values.get('serial', '') }}"{% if not is_tool %} disabled{% endif %}></div>
+              </fieldset>
+            {% endif %}
+            <div class="field"{% if action == 'stock_in' %} data-part-fields{% if not selected_item or is_tool %} hidden{% endif %}{% endif %}>
+              <label for="quantity">{{ 'จำนวนที่ปรับ' if action == 'adjust' else 'จำนวน' }}</label>
+              <input class="form-control" id="quantity" type="number" name="quantity" step="1" value="{{ values.get('quantity', '') }}"{% if action != 'adjust' %} min="1"{% endif %}{% if action == 'stock_in' and (not selected_item or is_tool) %} disabled{% endif %} required{% if action == 'adjust' %} aria-describedby="adjust-help"{% endif %}>
+              {% if action == 'adjust' %}<small id="adjust-help">ใส่จำนวนบวกเพื่อเพิ่มยอด หรือจำนวนลบเพื่อลดยอด</small>{% endif %}
+            </div>
+            {% if action == 'stock_in' %}
+              <div class="field"><label for="source">แหล่งที่มา / ผู้จำหน่าย</label><input class="form-control" id="source" name="source" maxlength="200" value="{{ values.get('source', '') }}"></div>
+            {% endif %}
+            <div class="stock-summary span-full" data-stock-summary aria-live="polite"{% if not selected_item %} hidden{% endif %}>
+              <span>ยอดพร้อมใช้ปัจจุบัน <strong data-stock-before>{{ selected_item.available_quantity if selected_item else '—' }}</strong></span>
+              <span>ยอดหลังบันทึกโดยประมาณ <strong data-stock-after>—</strong></span>
+            </div>
+          {% else %}
+            <div class="field span-full">
+              <label for="tool_unit_id">{{ 'เครื่องมือที่ยืมค้าง' if action == 'return' else 'เครื่องมือรายชิ้น' }}</label>
+              <select class="form-select" id="tool_unit_id" name="tool_unit_id" data-unit-select required><option value="">เลือกเครื่องมือ</option>
+                {% for unit in units %}
+                  <option value="{{ unit.id }}" data-loan="{{ unit.loan_id or '' }}" data-status="{{ unit.status }}"{% if unit.loan_id %} data-borrower="ผู้ยืม {{ unit.borrower_name }} · กำหนดคืน {{ unit.due_at.split('-')|reverse|join('/') }}"{% endif %}{% if selected_unit and selected_unit.id == unit.id %} selected{% endif %}>{{ unit.code }} · {{ unit.item_name }}{% if action == 'return' %} · {{ unit.borrower_name }}{% elif action == 'status' %} · {{ labels[unit.status] }}{% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endif %}
+          {% if action == 'stock_out' %}
+            {{ user_field('requester_id', 'ผู้เบิก') }}
+            <div class="field"><label for="purpose">วัตถุประสงค์</label><input class="form-control" id="purpose" name="purpose" maxlength="300" value="{{ values.get('purpose', '') }}" required></div>
+            <div class="field"><label for="work_order">เลขใบงานซ่อม</label><input class="form-control mono" id="work_order" name="work_order" maxlength="100" value="{{ values.get('work_order', '') }}"></div>
+          {% elif action == 'loan' %}
+            {{ user_field('requester_id', 'ผู้ยืม') }}
+            {{ user_field('responsible_id', 'ผู้รับผิดชอบ') }}
+            <div class="field"><label for="due_at">กำหนดคืน</label><input class="form-control" type="date" id="due_at" name="due_at" value="{{ values.get('due_at', '') }}" required></div>
+          {% elif action == 'return' %}
+            <input type="hidden" name="loan_id" value="{{ selected_unit.loan_id if selected_unit else '' }}">
+            <p class="stock-summary span-full" data-loan-summary aria-live="polite"{% if not selected_unit %} hidden{% endif %}>{% if selected_unit %}ผู้ยืม {{ selected_unit.borrower_name }} · กำหนดคืน {{ selected_unit.due_at.split('-')|reverse|join('/') }}{% endif %}</p>
+            <div class="field">
+              <label for="condition">สภาพเมื่อคืน</label>
+              <select class="form-select" id="condition" name="condition" required><option value="">เลือกสภาพเครื่องมือ</option>
+                <option value="good"{% if values.get('condition') == 'good' %} selected{% endif %}>สภาพดี → พร้อมใช้งาน</option>
+                <option value="damaged"{% if values.get('condition') == 'damaged' %} selected{% endif %}>ชำรุด → รอจัดการ</option>
+              </select>
+            </div>
+          {% elif action == 'status' %}
+            <div class="field">
+              <label for="status">สถานะใหม่</label>
+              <select class="form-select" id="status" name="status" required><option value="">เลือกสถานะ</option>
+                {% for state in ['available', 'repair', 'damaged'] %}<option value="{{ state }}"{% if values.get('status') == state %} selected{% endif %}>{{ labels[state] }}</option>{% endfor %}
+              </select>
+            </div>
+          {% endif %}
+          {% if action in ['adjust', 'status'] %}
+            <div class="field"><label for="reference_id">เลขอ้างอิงธุรกรรมเดิม</label><input class="form-control" type="number" id="reference_id" name="reference_id" min="1" value="{{ values.get('reference_id', '') }}"><small>ใช้เมื่อแก้ไขหรืออ้างถึงธุรกรรมของรายการนี้</small></div>
+            <div class="field span-full"><label for="reason">เหตุผล</label><textarea class="form-control" id="reason" name="reason" maxlength="300" required>{{ values.get('reason', '') }}</textarea></div>
+          {% else %}
+            <div class="field span-full"><label for="note">หมายเหตุ</label><textarea class="form-control" id="note" name="note" maxlength="500">{{ values.get('note', '') }}</textarea></div>
+          {% endif %}
+          <div class="actions span-full">
+            <button class="btn btn-primary" type="submit">{{ icon('check', 17) }} ยืนยัน{{ labels[action] }}</button>
+            <a class="btn btn-secondary" href="{{ url_for('inventory') }}">ยกเลิก</a>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

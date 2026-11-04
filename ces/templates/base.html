@@ -1,0 +1,81 @@
+{% from '_icons.html' import icon %}
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f7f7">
+  <title>{% block title %}CES Inventory{% endblock %} · CES Inventory</title>
+  <link rel="icon" href="{{ url_for('static', filename='mark.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ces.css') }}">
+  <script src="{{ url_for('static', filename='ces.js') }}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
+  {% macro navigation_link(endpoint, name, image, active, args={}) %}
+    <a class="navigation-link{{ ' is-current' if active }}" href="{{ url_for(endpoint, **args) }}"{% if active %} aria-current="page"{% endif %}>{{ icon(image, 19) }}<span>{{ name }}</span></a>
+  {% endmacro %}
+  {% if g.user %}
+    <div class="app-shell">
+      <aside class="sidebar" id="site-sidebar">
+        <a href="{{ url_for('dashboard') }}" class="brand">
+          <span class="brand-mark">{{ icon('logo', 24) }}</span>
+          <span><strong>CES Inventory</strong><small>Clinical Engineering Services</small></span>
+        </a>
+        <button class="icon-button menu-toggle" type="button" aria-label="เปิดเมนู" aria-controls="site-navigation" aria-expanded="false">{{ icon('menu', 22) }}</button>
+        <nav class="navigation" id="site-navigation" aria-label="เมนูหลัก">
+          <p class="navigation-label">จัดการคลัง</p>
+          {{ navigation_link('dashboard', 'ภาพรวม', 'dashboard', request.endpoint == 'dashboard') }}
+          {{ navigation_link('inventory', 'ทะเบียนคลัง', 'box', request.endpoint in ['inventory', 'item_detail', 'item_form']) }}
+          {% if g.user.role in ['technician', 'admin'] %}
+            {{ navigation_link('operations', 'ทำรายการ', 'movement', request.endpoint == 'operations', {'action': 'stock_in' if g.user.role == 'technician' else 'adjust'}) }}
+          {% endif %}
+          {% if g.user.role in ['admin', 'supervisor'] %}
+            {{ navigation_link('history', 'ประวัติธุรกรรม', 'clock', request.endpoint == 'history') }}
+            {{ navigation_link('reports', 'รายงาน', 'report', request.endpoint == 'reports') }}
+          {% endif %}
+          {% if g.user.role == 'admin' %}
+            <p class="navigation-label">ตั้งค่าระบบ</p>
+            {% set section = (request.view_args or {}).get('section') %}
+            {{ navigation_link('settings', 'หมวดหมู่', 'tags', section == 'categories', {'section': 'categories'}) }}
+            {{ navigation_link('settings', 'ตำแหน่งจัดเก็บ', 'location', section == 'locations', {'section': 'locations'}) }}
+            {{ navigation_link('settings', 'บัญชีผู้ใช้', 'users', section == 'users', {'section': 'users'}) }}
+          {% endif %}
+          <div class="sidebar-account">
+            <div class="account-avatar">{{ icon('users', 18) }}</div>
+            <div class="account-text"><strong>{{ g.user.name }}</strong><small>{{ labels.get(g.user.role, g.user.role) }}</small></div>
+            <form method="post" action="{{ url_for('logout') }}">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button class="icon-button" type="submit" aria-label="ออกจากระบบ" title="ออกจากระบบ">{{ icon('logout', 18) }}</button>
+            </form>
+          </div>
+        </nav>
+      </aside>
+  {% endif %}
+  <main id="main-content" tabindex="-1" class="{{ 'workspace' if g.user else 'public-workspace' }}">
+    {% if g.user %}
+      <header class="workspace-header">
+        <span><span class="header-unit">ห้องช่าง CES</span><span class="header-divider">/</span><span>{{ self.title() }}</span></span>
+        <span class="workspace-tag"><span></span> ระบบคลังห้องช่าง</span>
+      </header>
+    {% endif %}
+    <div class="{{ 'page-content' if g.user else 'public-content' }}">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="notification-list" aria-label="ข้อความจากระบบ">
+            {% for category, message in messages %}
+              <div class="notification {{ 'notification-success' if category == 'success' else 'notification-error' }}" role="{{ 'status' if category == 'success' else 'alert' }}"{% if category != 'success' %} tabindex="-1"{% endif %}>
+                {{ icon('check' if category == 'success' else 'warning', 19) }} <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+    {% if g.user %}<footer class="workspace-footer"><span>CES Inventory Management System</span><span>Clinical Engineering Services</span></footer>{% endif %}
+  </main>
+  {% if g.user %}</div>{% endif %}
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'แก้ไขทะเบียน' if is_edit else 'เพิ่มรายการคลัง' }}{% endblock %}
+{% block content %}
+  {% set record = item or {} %}
+  {% set kind = record.kind|default('part') %}
+  <div class="page-heading">
+    <div><span class="eyebrow">ทะเบียนคลัง</span><h1>{{ self.title() }}</h1><p>กำหนดข้อมูลหลักและตำแหน่งจัดเก็บ</p></div>
+    <a class="text-link" href="{{ url_for('item_detail', item_id=record.id) if is_edit else url_for('inventory') }}">{{ icon('back', 17) }} กลับ</a>
+  </div>
+  <section class="panel form-width" aria-label="ฟอร์มทะเบียนคลัง">
+    <form method="post" class="panel-body form-grid" data-item-form>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field"><label for="code">รหัสรายการ</label><input class="form-control mono" id="code" name="code" value="{{ record.code|default('') }}" maxlength="48" required></div>
+      <div class="field"><label for="name">ชื่อรายการ</label><input class="form-control" id="name" name="name" value="{{ record.name|default('') }}" maxlength="150" required></div>
+      <div class="field">
+        {% if is_edit %}
+          <label for="kind_display">ประเภท</label>
+          <input type="hidden" name="kind" value="{{ kind }}"><input class="form-control" id="kind_display" value="{{ labels.get(kind, kind) }}" aria-describedby="kind_help" readonly>
+          <small id="kind_help">ระบบกำหนดประเภทเมื่อเพิ่มรายการ</small>
+        {% else %}
+          <label for="kind">ประเภท</label>
+          <select class="form-select" id="kind" name="kind">
+            {% for value in ['part', 'tool'] %}<option value="{{ value }}"{% if kind == value %} selected{% endif %}>{{ labels[value] }}</option>{% endfor %}
+          </select>
+        {% endif %}
+      </div>
+      <div class="field"><label for="unit">หน่วยนับ</label><input class="form-control" id="unit" name="unit" value="{{ record.unit|default('') }}" maxlength="32" placeholder="เช่น ชิ้น" required></div>
+      <div class="field">
+        <label for="category_id">หมวดหมู่</label>
+        <select class="form-select" id="category_id" name="category_id" required><option value="">เลือกหมวดหมู่</option>
+          {% for row in categories %}<option value="{{ row.id }}"{% if record.category_id|default('')|string == row.id|string %} selected{% endif %}>{{ row.name }}{{ ' (ปิดใช้งาน)' if not row.active else '' }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="location_id">ตำแหน่งจัดเก็บ</label>
+        <select class="form-select" id="location_id" name="location_id" required><option value="">เลือกตำแหน่ง</option>
+          {% for row in locations %}<option value="{{ row.id }}"{% if record.location_id|default('')|string == row.id|string %} selected{% endif %}>{{ row.path }}{{ ' (ปิดใช้งาน)' if not row.active else '' }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field" data-minimum-field{% if kind == 'tool' %} hidden{% endif %}><label for="min_quantity">ยอดขั้นต่ำ</label><input class="form-control" type="number" id="min_quantity" name="min_quantity" min="0" max="999999999" value="{{ record.min_quantity|default(0) }}"{% if kind == 'part' %} required{% endif %}></div>
+      <div class="field"><label for="brand">ยี่ห้อ</label><input class="form-control" id="brand" name="brand" value="{{ record.brand|default('') }}" maxlength="100"></div>
+      <div class="field"><label for="model">รุ่น</label><input class="form-control" id="model" name="model" value="{{ record.model|default('') }}" maxlength="100"></div>
+      <div class="field span-full"><label for="description">รายละเอียด</label><textarea class="form-control" id="description" name="description" maxlength="1000">{{ record.description|default('') }}</textarea></div>
+      <div class="field check-field span-full">
+        <input type="checkbox" id="active" name="active" value="1"{% if record.active|default(true) %} checked{% endif %}>
+        <label for="active">เปิดใช้งานรายการนี้</label>
+      </div>
+      <div class="actions span-full">
+        <button class="btn btn-primary" type="submit">{{ icon('check', 17) }} บันทึกทะเบียน</button>
+        <a class="btn btn-secondary" href="{{ url_for('item_detail', item_id=record.id) if is_edit else url_for('inventory') }}">ยกเลิก</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

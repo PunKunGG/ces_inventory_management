@@ -1,0 +1,10 @@
+.venv/
+instance/
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.db
+*.db-journal
+.ces-copy-*
+.env
+artifacts/

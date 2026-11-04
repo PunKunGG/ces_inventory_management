@@ -1,0 +1,85 @@
+{% from '_icons.html' import icon %}
+{% macro badge(value, labels) -%}
+  <span class="status-badge {{ value }}">{{ labels.get(value, {'active': 'เปิดใช้งาน', 'inactive': 'ปิดใช้งาน'}.get(value, value)) }}</span>
+{%- endmacro %}
+
+{% macro empty_state(message, image='box') -%}
+  <div class="empty-state">{{ icon(image, 25) }}<p>{{ message }}</p></div>
+{%- endmacro %}
+
+{% macro inventory_table(items, labels) %}
+  {% if items %}
+    <div class="table-wrap">
+      <table class="data-table mobile-table" role="table" aria-label="รายการคลัง">
+        <thead role="rowgroup"><tr role="row">
+          <th scope="col" role="columnheader">รหัส / รายการ</th><th scope="col" role="columnheader">ประเภท</th>
+          <th scope="col" role="columnheader">หมวดหมู่</th><th scope="col" role="columnheader">ตำแหน่งจัดเก็บ</th>
+          <th scope="col" role="columnheader" class="table-right">ยอดพร้อมใช้</th><th scope="col" role="columnheader">สถานะ</th>
+        </tr></thead>
+        <tbody role="rowgroup">
+          {% for row in items %}
+            <tr role="row">
+              <td role="cell" data-label="รหัส / รายการ"><span><a class="text-link" href="{{ url_for('item_detail', item_id=row.id) }}">{{ row.name }}</a><span class="table-subtitle mono">{{ row.code }}</span></span></td>
+              <td role="cell" data-label="ประเภท"><span>{{ labels.get(row.kind, row.kind) }}</span></td>
+              <td role="cell" data-label="หมวดหมู่"><span>{{ row.category_name }}</span></td>
+              <td role="cell" data-label="ตำแหน่ง"><span>{{ row.location_path }}</span></td>
+              <td role="cell" data-label="ยอดพร้อมใช้" class="table-right"><span class="number"><strong>{{ row.available_quantity }}</strong> {{ row.unit }}{% if row.kind == 'tool' %}<span class="table-subtitle">จาก {{ row.tool_total }} {{ row.unit }}</span>{% endif %}</span></td>
+              <td role="cell" data-label="สถานะ">
+                {% if not row.active or row.kind == 'part' %}
+                  {{ badge('inactive' if not row.active else row.stock_state, labels) }}
+                {% elif not row.tool_total %}
+                  <span class="subtle">ยังไม่มีเครื่องมือ</span>
+                {% else %}
+                  <span class="unit-statuses">
+                    {% for status, count in [('available', row.available_quantity), ('loaned', row.loaned_count), ('repair', row.repair_count), ('damaged', row.damaged_count)] %}
+                      {% if count %}<span class="status-badge {{ status }}">{{ labels.get(status, status) }} {{ count }}</span>{% endif %}
+                    {% endfor %}
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {{ empty_state('ไม่พบรายการตามเงื่อนไขที่เลือก', 'search') }}
+  {% endif %}
+{% endmacro %}
+
+{% macro movement_table(movements, labels, format_time) %}
+  {% if movements %}
+    <div class="table-wrap">
+      <table class="data-table mobile-table" role="table" aria-label="ประวัติธุรกรรม">
+        <thead role="rowgroup"><tr role="row">
+          <th scope="col" role="columnheader">เวลา / เลขอ้างอิง</th><th scope="col" role="columnheader">ธุรกรรม</th>
+          <th scope="col" role="columnheader">รายการ</th><th scope="col" role="columnheader">ผู้บันทึก</th>
+          <th scope="col" role="columnheader" class="table-right">ก่อน / เปลี่ยน / หลัง</th><th scope="col" role="columnheader">รายละเอียด</th>
+        </tr></thead>
+        <tbody role="rowgroup">
+          {% for row in movements %}
+            <tr role="row" id="movement-{{ row.id }}">
+              <td role="cell" data-label="วันเวลา"><span>{{ format_time(row.created_at) }}<span class="table-subtitle mono">#{{ row.id }}</span></span></td>
+              <td role="cell" data-label="ธุรกรรม">{{ badge(row.action, labels) }}</td>
+              <td role="cell" data-label="รายการ"><span><a class="text-link" href="{{ url_for('item_detail', item_id=row.item_id) }}">{{ row.item_name }}</a><span class="table-subtitle mono">{{ row.item_code }}{% if row.tool_code %} · {{ row.tool_code }}{% endif %}</span></span></td>
+              <td role="cell" data-label="ผู้บันทึก"><span>{{ row.actor_name }}{% if row.requester_name %}<span class="table-subtitle">ผู้เบิก / ยืม {{ row.requester_name }}</span>{% endif %}</span></td>
+              <td role="cell" data-label="ก่อน / เปลี่ยน / หลัง" class="table-right"><span class="number nowrap">{{ row.before_quantity }} / {{ '+' if row.delta > 0 else '' }}{{ row.delta }} / <strong>{{ row.after_quantity }}</strong></span></td>
+              <td role="cell" data-label="รายละเอียด" class="table-note">
+                <span>
+                  {{ row.reason or row.note or row.source or row.work_order or '—' }}
+                  {% if row.reason and row.note %}<span class="table-subtitle">{{ row.note }}</span>{% endif %}
+                  {% if row.source and (row.reason or row.note) %}<span class="table-subtitle">ที่มา {{ row.source }}</span>{% endif %}
+                  {% if row.work_order and (row.reason or row.note or row.source) %}<span class="table-subtitle">ใบงาน {{ row.work_order }}</span>{% endif %}
+                  {% if row.new_status %}<span class="table-subtitle">{{ labels.get(row.previous_status, row.previous_status or '—') }} → {{ labels.get(row.new_status, row.new_status) }}</span>{% endif %}
+                  {% if row.reference_id %}<span class="table-subtitle">อ้างอิง #{{ row.reference_id }}</span>{% endif %}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {{ empty_state('ไม่พบธุรกรรมตามเงื่อนไขที่เลือก', 'clock') }}
+  {% endif %}
+{% endmacro %}

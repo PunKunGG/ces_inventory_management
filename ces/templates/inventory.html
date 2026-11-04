@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% from '_tables.html' import inventory_table %}
+{% block title %}ทะเบียนคลัง{% endblock %}
+{% block content %}
+  <div class="page-heading">
+    <div><span class="eyebrow">คลังห้องช่าง CES</span><h1>ทะเบียนคลัง</h1><p>ค้นหาเครื่องมือ อะไหล่ และตำแหน่งจัดเก็บ</p></div>
+    {% if g.user.role == 'admin' %}<a class="btn btn-primary" href="{{ url_for('item_form') }}">{{ icon('plus', 18) }} เพิ่มรายการ</a>{% endif %}
+  </div>
+  <div class="stack">
+    <section class="panel" aria-label="ตัวกรองรายการคลัง">
+      <form method="get" class="filter-form">
+        <div class="field wide-filter"><label for="q">ค้นหา</label><input class="form-control" type="search" id="q" name="q" value="{{ request.args.get('q', '') }}" placeholder="รหัส ชื่อ รุ่น หรือ Serial Number"></div>
+        <div class="field">
+          <label for="kind">ประเภท</label>
+          <select class="form-select" id="kind" name="kind"><option value="">ทุกประเภท</option>
+            {% for value in ['tool', 'part'] %}<option value="{{ value }}"{% if request.args.get('kind') == value %} selected{% endif %}>{{ labels.get(value, value) }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="status">สถานะ</label>
+          <select class="form-select" id="status" name="status"><option value="">ทุกสถานะ</option>
+            {% for value in ['ok', 'low', 'out', 'available', 'loaned', 'repair', 'damaged'] %}<option value="{{ value }}"{% if request.args.get('status') == value %} selected{% endif %}>{{ labels.get(value, value) }}</option>{% endfor %}
+            {% if g.user.role == 'admin' %}<option value="inactive"{% if request.args.get('status') == 'inactive' %} selected{% endif %}>ปิดใช้งาน</option>{% endif %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="category_id">หมวดหมู่</label>
+          <select class="form-select" id="category_id" name="category_id"><option value="">ทุกหมวดหมู่</option>
+            {% for row in categories %}<option value="{{ row.id }}"{% if request.args.get('category_id') == row.id|string %} selected{% endif %}>{{ row.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="location_id">ตำแหน่ง</label>
+          <select class="form-select" id="location_id" name="location_id"><option value="">ทุกตำแหน่ง</option>
+            {% for row in locations %}<option value="{{ row.id }}"{% if request.args.get('location_id') == row.id|string %} selected{% endif %}>{{ row.path }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="actions"><button class="btn btn-primary" type="submit">{{ icon('search', 16) }} ค้นหา</button><a class="btn btn-secondary" href="{{ url_for('inventory') }}">ล้าง</a></div>
+      </form>
+    </section>
+    <section class="panel" aria-labelledby="items-heading">
+      <div class="panel-heading"><div><h2 id="items-heading">รายการในคลัง</h2><p>{{ items|length }} รายการ</p></div></div>
+      {{ inventory_table(items, labels) }}
+    </section>
+  </div>
+{% endblock %}

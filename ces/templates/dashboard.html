@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% from '_tables.html' import badge, empty_state %}
+{% block title %}ภาพรวมคลัง{% endblock %}
+{% block content %}
+  <div class="stack">
+    <section class="hero">
+      <span class="hero-kicker"><span></span> CES INVENTORY</span>
+      <h1>ภาพรวมคลังห้องช่าง</h1>
+      <p>สวัสดี {{ g.user.name }} ตรวจสอบสถานะคลังและติดตามรายการล่าสุดได้จากหน้านี้</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="{{ url_for('inventory') }}">{{ icon('search', 17) }} ค้นหาในคลัง</a>
+        {% if g.user.role == 'technician' %}
+          <a class="btn btn-secondary" href="{{ url_for('operations', action='stock_in') }}">{{ icon('movement', 17) }} ทำรายการ</a>
+        {% elif g.user.role == 'admin' %}
+          <a class="btn btn-secondary" href="{{ url_for('item_form') }}">{{ icon('plus', 17) }} เพิ่มรายการ</a>
+        {% else %}
+          <a class="btn btn-secondary" href="{{ url_for('reports') }}">{{ icon('report', 17) }} ดูรายงาน</a>
+        {% endif %}
+      </div>
+    </section>
+    <section class="metric-grid" aria-label="สรุปยอดคลัง">
+      {% macro metric(value, label, image, color='', filters={}) %}
+        <a class="metric" href="{{ url_for('inventory', **filters) }}">
+          <span class="metric-icon {{ color }}">{{ icon(image, 19) }}</span><strong class="metric-number number">{{ value }}</strong><span class="metric-label">{{ label }}</span>
+        </a>
+      {% endmacro %}
+      {{ metric(stats.tools, 'รายการเครื่องมือ', 'tool', filters={'kind': 'tool'}) }}
+      {{ metric(stats.parts, 'รายการอะไหล่', 'box', 'blue', {'kind': 'part'}) }}
+      {{ metric(stats.available_tools, 'เครื่องมือพร้อมใช้ (ชิ้น)', 'check', filters={'kind': 'tool', 'status': 'available'}) }}
+      {{ metric(stats.low, 'รายการใกล้หมด', 'warning', 'amber', {'kind': 'part', 'status': 'low'}) }}
+      {{ metric(stats.out, 'รายการหมดสต็อก', 'empty', 'red', {'kind': 'part', 'status': 'out'}) }}
+    </section>
+    <div class="dashboard-grid">
+      <section class="panel" aria-labelledby="activity-heading">
+        <div class="panel-heading">
+          <div><h2 id="activity-heading">ความเคลื่อนไหวล่าสุด</h2><p>รายการที่เพิ่งบันทึกในระบบคลัง</p></div>
+          {% if g.user.role in ['admin', 'supervisor'] %}<a class="text-link" href="{{ url_for('history') }}">ดูประวัติ {{ icon('arrow', 16) }}</a>{% endif %}
+        </div>
+        {% if recent %}
+          <ul class="panel-list">
+            {% for row in recent %}
+              <li>
+                <span class="metric-icon">{{ icon({'stock_in': 'in', 'stock_out': 'out', 'loan': 'tool', 'return': 'return', 'adjust': 'edit', 'status': 'tool'}.get(row.action, 'movement'), 17) }}</span>
+                <span class="grow"><a class="text-link" href="{{ url_for('item_detail', item_id=row.item_id) }}">{{ row.item_name }}</a><small class="subtle">{{ row.actor_name }} · {{ format_time(row.created_at) }}</small></span>
+                {{ badge(row.action, labels) }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          {{ empty_state('ยังไม่มีรายการเคลื่อนไหว', 'clock') }}
+        {% endif %}
+      </section>
+      <section class="panel" aria-labelledby="low-heading">
+        <div class="panel-heading"><div><h2 id="low-heading">แจ้งเตือนสต็อก</h2><p>อะไหล่หมดหรือถึงยอดขั้นต่ำ</p></div></div>
+        {% if low_items %}
+          <ul class="panel-list">
+            {% for item in low_items %}
+              <li><span class="grow"><a class="text-link" href="{{ url_for('item_detail', item_id=item.id) }}">{{ item.name }}</a><small class="subtle">{{ item.available_quantity }} {{ item.unit }} · ขั้นต่ำ {{ item.min_quantity }}</small></span>{{ badge(item.stock_state, labels) }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          {{ empty_state('ยอดอะไหล่อยู่เหนือขั้นต่ำทุกรายการ', 'check') }}
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

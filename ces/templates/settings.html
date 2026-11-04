@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% from '_tables.html' import badge, empty_state %}
+{% set sections = {'categories': 'หมวดหมู่', 'locations': 'ตำแหน่งจัดเก็บ', 'users': 'บัญชีผู้ใช้'} %}
+{% block title %}{{ sections[section] }}{% endblock %}
+{% block content %}
+  {% set record = entry or {} %}
+  {% set editing = record.id|default(false) %}
+  {% set descriptions = {
+    'categories': 'จัดกลุ่มเครื่องมือและอะไหล่ในทะเบียนคลัง',
+    'locations': 'กำหนดผังตำแหน่งตั้งแต่ห้องไปจนถึงช่องจัดเก็บ',
+    'users': 'สร้างบัญชี CES กำหนดบทบาท และจัดการสถานะบัญชี'
+  } %}
+  <div class="page-heading"><div><span class="eyebrow">ตั้งค่าระบบ</span><h1>{{ sections[section] }}</h1><p>{{ descriptions[section] }}</p></div></div>
+  <div class="split-layout">
+    <section class="panel" aria-labelledby="settings-list">
+      <div class="panel-heading"><div><h2 id="settings-list">รายการ{{ sections[section] }}</h2><p>{{ rows|length }} รายการ</p></div></div>
+      {% if rows %}
+        <div class="table-wrap">
+          <table class="data-table mobile-table" role="table" aria-labelledby="settings-list">
+            <thead role="rowgroup"><tr role="row">
+              <th scope="col" role="columnheader">ชื่อ</th>
+              {% if section == 'users' %}<th scope="col" role="columnheader">บทบาท</th>{% endif %}
+              <th scope="col" role="columnheader">สถานะ</th><th scope="col" role="columnheader">แก้ไข</th>
+            </tr></thead>
+            <tbody role="rowgroup">
+              {% for row in rows %}
+                <tr role="row">
+                  <td role="cell" data-label="ชื่อ">
+                    <span>{{ row.path if section == 'locations' else row.name }}{% if section == 'users' %}<span class="table-subtitle mono">{{ row.username }}</span>{% endif %}</span>
+                  </td>
+                  {% if section == 'users' %}<td role="cell" data-label="บทบาท">{{ labels[row.role] }}</td>{% endif %}
+                  <td role="cell" data-label="สถานะ">{{ badge('active' if row.active else 'inactive', labels) }}</td>
+                  <td role="cell" data-label="แก้ไข"><a class="btn btn-secondary btn-small" href="{{ url_for('settings', section=section, edit=row.id) }}#settings-form" aria-label="แก้ไข {{ row.name }}">{{ icon('edit', 15) }} แก้ไข</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        {{ empty_state('ยังไม่มีรายการในหมวดนี้') }}
+      {% endif %}
+    </section>
+    <section class="panel" id="settings-form" aria-labelledby="settings-heading">
+      <div class="panel-heading"><div><h2 id="settings-heading">{{ 'แก้ไข' if editing else 'เพิ่ม' }}{{ sections[section] }}</h2></div></div>
+      <form method="post" action="{{ url_for('settings', section=section) }}" class="panel-body form-grid">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        {% if editing %}<input type="hidden" name="id" value="{{ record.id }}">{% endif %}
+        <div class="field span-full"><label for="name">{{ 'ชื่อเจ้าหน้าที่' if section == 'users' else 'ชื่อ' ~ sections[section] }}</label><input class="form-control" id="name" name="name" maxlength="120" value="{{ record.name|default('') }}" required></div>
+        {% if section == 'users' %}
+          <div class="field span-full"><label for="username">ชื่อผู้ใช้</label><input class="form-control mono" id="username" name="username" value="{{ record.username|default('') }}" maxlength="64" autocapitalize="none" autocomplete="off" spellcheck="false" required></div>
+          <div class="field span-full">
+            <label for="role">บทบาท</label>
+            <select class="form-select" id="role" name="role" required><option value="">เลือกบทบาท</option>
+              {% for value in ['technician', 'supervisor', 'admin'] %}<option value="{{ value }}"{% if record.role|default('') == value %} selected{% endif %}>{{ labels[value] }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field span-full">
+            <label for="password">{{ 'ตั้งรหัสผ่านใหม่' if editing else 'รหัสผ่าน' }}</label>
+            <input class="form-control" type="password" id="password" name="password" minlength="12" maxlength="256" autocomplete="new-password" aria-describedby="password-help"{% if not editing %} required{% endif %}>
+            <small id="password-help">{{ 'กรอกเมื่อต้องการเปลี่ยนรหัสผ่าน ' if editing else '' }}ใช้ 12–256 ตัวอักษร</small>
+          </div>
+        {% elif section == 'locations' %}
+          <div class="field span-full">
+            <label for="parent_id">ตำแหน่งแม่</label>
+            <select class="form-select" id="parent_id" name="parent_id"><option value="">ตำแหน่งระดับบนสุด</option>
+              {% for row in locations %}<option value="{{ row.id }}"{% if record.parent_id|default('')|string == row.id|string %} selected{% endif %}>{{ row.path }}</option>{% endfor %}
+            </select>
+          </div>
+        {% endif %}
+        <div class="field check-field span-full"><input type="checkbox" id="active" name="active" value="1"{% if record.active|default(true) %} checked{% endif %}><label for="active">เปิดใช้งาน</label></div>
+        <div class="actions span-full">
+          <button class="btn btn-primary" type="submit">{{ icon('check', 17) }} บันทึก</button>
+          {% if editing %}<a class="btn btn-secondary" href="{{ url_for('settings', section=section) }}">ยกเลิก</a>{% endif %}
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

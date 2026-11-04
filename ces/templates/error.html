@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}เกิดข้อผิดพลาด{% endblock %}
+{% block content %}
+  <section class="panel error-content">
+    <div class="panel-body">
+      <span class="section-icon">{{ icon('warning', 22) }}</span>
+      <h1>เกิดข้อผิดพลาด {{ code }}</h1>
+      <p class="subtle">{{ message }}</p>
+      <a class="btn btn-primary" href="{{ url_for('home') }}">{{ icon('back', 18) }} กลับหน้าแรก</a>
+    </div>
+  </section>
+{% endblock %}
