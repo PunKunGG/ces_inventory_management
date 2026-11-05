@@ -46,3 +46,34 @@ network and representative physical devices.
    return on both phones. Record device/OS/browser and network details.
 4. Type the printed URL directly and verify the same entrance. Test keyboard
    interaction and field feedback separately.
+
+## Rebrand verification 2026 11 05
+
+The approved rebrand uses the Bangkok Hospital Khon Kaen logo, visible hospital
+name and CES Inventory identity, local Sarabun fonts and the blue, navy and red
+palette recorded in `docs/DESIGN_SYSTEM.md`. Verification used synthetic accounts
+and an isolated loopback server. Existing product and physical-device acceptance
+above continues to apply.
+
+| Approved criterion | Verification | Result |
+| --- | --- | --- |
+| Hospital identity on every main page | 30 page and role combinations at each of 1440, 1024, 768 and 390 CSS pixels, plus the same 30 at 200% browser zoom | PASS |
+| Original logo aspect and legibility | Image loaded from local brand path, labeled alt text, width-to-height ratio 129/42, no clipping; desktop sidebar 180px, login 240px, mobile login 200px | PASS |
+| Local typography and approved palette | Browser loaded local Sarabun fonts, computed font and CSS tokens match the approved blue, navy, red, text and background colors | PASS |
+| Responsive pages and form access | Main authorized pages have no horizontal page overflow, visible form fields have labels and assets have no failed resource requests | PASS |
+| Keyboard focus and error feedback | Login tab order, blue 3px focus outline, visible error and `aria-invalid`; existing mobile flow checks menu Escape and retained input on rejected issue | PASS |
+| Existing stock, rights and persistence behavior | `.venv/Scripts/python -m unittest discover -s tests -v` passed 20 tests in 12.988 seconds | PASS |
+| Mobile interaction flow after rebrand | `python -m unittest discover -s tests -p browser_smoke.py -v` passed one test in 12.014 seconds with Chrome and ChromeDriver 143.0.7499.169 | PASS |
+
+The visual audit covered 150 page checks. Actual browser zoom used the Chrome
+Tabs API in a disposable extension and browser profile, with a 1440px window
+reflowing to a measured 712px CSS viewport at device-pixel ratio 2. The audit saved
+`artifacts/rebrand/visual-results.json`. After the narrow Login brand labels were
+placed on separate lines, requested screenshots were refreshed against the final
+CSS. The captures include desktop and mobile Login, Dashboard, Inventory and
+transaction forms, the expanded mobile menu, mobile inventory cards, Login error
+feedback and the 200% browser views. These ignored artifacts are proof captures,
+and the source of the temporary browser harness is outside the project.
+
+Physical iPhone and Android scanning and connectivity on the hospital network
+are pending manual acceptance on the staging environment.

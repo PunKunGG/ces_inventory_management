@@ -2,27 +2,27 @@
 {% block title %}เข้าสู่ระบบ{% endblock %}
 {% block content %}
   <div class="login-layout">
-    <section class="login-visual" aria-label="ระบบจัดการคลังห้องช่าง">
+    <section class="login-visual" aria-label="ระบบจัดการคลังห้องช่าง โรงพยาบาลกรุงเทพขอนแก่น">
       <div class="login-brand brand">
-        <span class="brand-mark">{{ icon('logo', 26) }}</span>
-        <span><strong>CES Inventory</strong><small>Clinical Engineering Services</small></span>
+        <img class="hospital-logo" src="{{ url_for('static', filename='brand/bangkok-hospital-khonkaen.svg') }}" alt="โรงพยาบาลกรุงเทพขอนแก่น" width="129" height="42">
+        <span class="brand-copy"><strong>CES Inventory</strong><small>Clinical Engineering Services</small></span>
       </div>
       <div class="login-intro">
-        <span class="hero-kicker"><span></span> ห้องช่าง CES</span>
+        <span class="hero-kicker"><span></span> โรงพยาบาลกรุงเทพขอนแก่น</span>
         <h1>ระบบจัดการคลัง<br>ห้องช่าง CES</h1>
         <p>ค้นหาอะไหล่ ติดตามเครื่องมือ และบันทึกการเคลื่อนไหวของคลังได้ในที่เดียว</p>
       </div>
       <svg class="login-art" viewBox="0 0 480 320" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-        <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="#a3ebe0" opacity=".35"/></pattern></defs>
+        <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.4" fill="#0147a3" opacity=".2"/></pattern></defs>
         <path d="M17 40h455v270H17z" fill="url(#dots)" opacity=".8"/>
-        <g stroke="#8cddc8" stroke-width="1.5" opacity=".55">
+        <g stroke="#0147a3" stroke-width="1.5" opacity=".3">
           <path d="m53 165 93-47 93 47v85l-93 48-93-48zM53 165l93 47 93-47m-93 47v86m-44-156 92 46"/>
           <path d="m166 109 91-47 91 47v83l-91 47-18-9m-73-121 91 47 91-47m-91 47v83m-43-155 90 47"/>
           <path d="m275 55 79-41 79 41v74l-79 41-6-3m-73-112 79 41 79-41m-79 41v74m-42-137 79 42"/>
         </g>
-        <circle cx="358" cy="221" r="31" stroke="#b0eada" stroke-width="1.5" stroke-dasharray="4 5"/>
-        <path d="M346 221h24m-12-12v24" stroke="#b0eada" stroke-width="2" stroke-linecap="round"/>
-        <path d="M40 257h18m-9-9v18m384-69h16m-8-8v16" stroke="#b0eada" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="358" cy="221" r="31" stroke="#0147a3" stroke-width="1.5" stroke-dasharray="4 5" opacity=".3"/>
+        <path d="M346 221h24m-12-12v24" stroke="#b12028" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+        <path d="M40 257h18m-9-9v18m384-69h16m-8-8v16" stroke="#0147a3" stroke-width="1.5" stroke-linecap="round" opacity=".3"/>
       </svg>
     </section>
     <section class="login-main" aria-labelledby="login-heading">
@@ -45,7 +45,7 @@
         </form>
         <p class="login-help">หากเข้าใช้งานไม่ได้ กรุณาติดต่อผู้ดูแลระบบห้องช่าง</p>
       </div>
-      <p class="login-footer">ระบบสำหรับเจ้าหน้าที่ Clinical Engineering Services</p>
+      <p class="login-footer">สำหรับเจ้าหน้าที่ CES โรงพยาบาลกรุงเทพขอนแก่น</p>
     </section>
   </div>
 {% endblock %}

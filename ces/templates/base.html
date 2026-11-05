@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f3f7f7">
-  <title>{% block title %}CES Inventory{% endblock %} · CES Inventory</title>
+  <meta name="theme-color" content="#f4f7fb">
+  <title>{% block title %}CES Inventory{% endblock %} · CES Inventory · โรงพยาบาลกรุงเทพขอนแก่น</title>
   <link rel="icon" href="{{ url_for('static', filename='mark.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='ces.css') }}">
@@ -19,9 +19,9 @@
   {% if g.user %}
     <div class="app-shell">
       <aside class="sidebar" id="site-sidebar">
-        <a href="{{ url_for('dashboard') }}" class="brand">
-          <span class="brand-mark">{{ icon('logo', 24) }}</span>
-          <span><strong>CES Inventory</strong><small>Clinical Engineering Services</small></span>
+        <a href="{{ url_for('dashboard') }}" class="brand" aria-label="CES Inventory โรงพยาบาลกรุงเทพขอนแก่น กลับหน้าภาพรวม">
+          <img class="hospital-logo" src="{{ url_for('static', filename='brand/bangkok-hospital-khonkaen.svg') }}" alt="โรงพยาบาลกรุงเทพขอนแก่น" width="129" height="42">
+          <span class="brand-copy"><strong>CES Inventory</strong><small>โรงพยาบาลกรุงเทพขอนแก่น</small></span>
         </a>
         <button class="icon-button menu-toggle" type="button" aria-label="เปิดเมนู" aria-controls="site-navigation" aria-expanded="false">{{ icon('menu', 22) }}</button>
         <nav class="navigation" id="site-navigation" aria-label="เมนูหลัก">
@@ -74,7 +74,7 @@
       {% endwith %}
       {% block content %}{% endblock %}
     </div>
-    {% if g.user %}<footer class="workspace-footer"><span>CES Inventory Management System</span><span>Clinical Engineering Services</span></footer>{% endif %}
+    {% if g.user %}<footer class="workspace-footer"><span>CES Inventory · โรงพยาบาลกรุงเทพขอนแก่น</span><span>Clinical Engineering Services</span></footer>{% endif %}
   </main>
   {% if g.user %}</div>{% endif %}
 </body>
