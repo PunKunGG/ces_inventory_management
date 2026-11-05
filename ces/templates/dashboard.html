@@ -4,7 +4,7 @@
 {% block content %}
   <div class="stack">
     <section class="hero">
-      <span class="hero-kicker"><span></span> CES INVENTORY</span>
+      <span class="hero-kicker"><span></span> โรงพยาบาลกรุงเทพขอนแก่น</span>
       <h1>ภาพรวมคลังห้องช่าง</h1>
       <p>สวัสดี {{ g.user.name }} ตรวจสอบสถานะคลังและติดตามรายการล่าสุดได้จากหน้านี้</p>
       <div class="actions">
@@ -26,7 +26,7 @@
       {% endmacro %}
       {{ metric(stats.tools, 'รายการเครื่องมือ', 'tool', filters={'kind': 'tool'}) }}
       {{ metric(stats.parts, 'รายการอะไหล่', 'box', 'blue', {'kind': 'part'}) }}
-      {{ metric(stats.available_tools, 'เครื่องมือพร้อมใช้ (ชิ้น)', 'check', filters={'kind': 'tool', 'status': 'available'}) }}
+      {{ metric(stats.available_tools, 'เครื่องมือพร้อมใช้ (ชิ้น)', 'check', 'green', {'kind': 'tool', 'status': 'available'}) }}
       {{ metric(stats.low, 'รายการใกล้หมด', 'warning', 'amber', {'kind': 'part', 'status': 'low'}) }}
       {{ metric(stats.out, 'รายการหมดสต็อก', 'empty', 'red', {'kind': 'part', 'status': 'out'}) }}
     </section>
@@ -40,7 +40,7 @@
           <ul class="panel-list">
             {% for row in recent %}
               <li>
-                <span class="metric-icon">{{ icon({'stock_in': 'in', 'stock_out': 'out', 'loan': 'tool', 'return': 'return', 'adjust': 'edit', 'status': 'tool'}.get(row.action, 'movement'), 17) }}</span>
+                <span class="metric-icon{{ ' green' if row.action in ['stock_in', 'return'] else '' }}">{{ icon({'stock_in': 'in', 'stock_out': 'out', 'loan': 'tool', 'return': 'return', 'adjust': 'edit', 'status': 'tool'}.get(row.action, 'movement'), 17) }}</span>
                 <span class="grow"><a class="text-link" href="{{ url_for('item_detail', item_id=row.item_id) }}">{{ row.item_name }}</a><small class="subtle">{{ row.actor_name }} · {{ format_time(row.created_at) }}</small></span>
                 {{ badge(row.action, labels) }}
               </li>
